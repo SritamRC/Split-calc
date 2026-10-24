@@ -21,5 +21,19 @@
       "members": 1
     }
   ],
-  "expenses": []
+  "expenses": [
+    {
+      "id": "e_1792824065260",
+      "title": "Jaisalmer Camp booking",
+      "amount": 2000,
+      "payerId": "p_1792824042020",
+      "splitType": "per_capita",
+      "involvedIds": [
+        "p_1792824016603",
+        "p_1792824026718",
+        "p_1792824035834",
+        "p_1792824042020"
+      ]
+    }
+  ]
 }
