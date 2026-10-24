@@ -1,3 +1,10 @@
+Here is the code where your credentials and token are entered dynamically through a **Settings modal in the UI** and saved securely to your browser's local storage.
+
+Because the token lives in your browser rather than being hardcoded into the public code file, GitHub's automated security scanner will never flag it or invalidate it, keeping your write permissions fully active!
+
+### Updated `index.html` (With UI Settings Modal)
+
+```html
 <!DOCTYPE html>
 <html lang="en" class="h-full bg-slate-50">
 <head>
@@ -59,6 +66,9 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-1.5 sm:space-x-2">
+                    <button id="openConfigBtn" class="inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
+                        <i data-lucide="settings" class="w-3.5 h-3.5 mr-1.5"></i> Settings
+                    </button>
                     <button id="syncCloudBtn" class="inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg text-white bg-brand-600 hover:bg-brand-700 shadow-sm transition-colors">
                         <i data-lucide="refresh-cw" class="w-3.5 h-3.5 mr-1.5"></i> <span id="syncText">Sync Cloud</span>
                     </button>
@@ -163,6 +173,41 @@
         </section>
     </main>
 
+    <!-- MODAL: GITHUB SETTINGS / CREDENTIALS -->
+    <div id="configModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="key-round" class="w-5 h-5 text-brand-600"></i> GitHub Sync Settings
+                </h3>
+                <button class="closeModalBtn text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="configForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">GitHub Username / Owner</label>
+                    <input type="text" id="cfgOwner" required placeholder="e.g., john-doe" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Repository Name</label>
+                    <input type="text" id="cfgRepo" required placeholder="e.g., family-expense-splitter" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">JSON File Path</label>
+                    <input type="text" id="cfgPath" required value="data.json" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Fine-Grained Access Token</label>
+                    <input type="password" id="cfgToken" required placeholder="github_pat_..." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                    <p class="text-[11px] text-slate-500 mt-1">Saved locally in your browser. Never committed to code.</p>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" class="closeModalBtn px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl">Save Credentials</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- MODAL: ADD/EDIT PARTICIPANT -->
     <div id="personModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
@@ -258,7 +303,10 @@
     <!-- JAVASCRIPT APP LOGIC -->
     <script>
         let config = {
-            path: "data.json"
+            owner: localStorage.getItem('gh_owner') || '',
+            repo: localStorage.getItem('gh_repo') || '',
+            path: localStorage.getItem('gh_path') || 'data.json',
+            token: localStorage.getItem('gh_token') || ''
         };
 
         let state = {
@@ -267,9 +315,18 @@
             activeTab: 'expenses'
         };
 
+        let fileSha = null;
+
         const elements = {
+            openConfigBtn: document.getElementById('openConfigBtn'),
             syncCloudBtn: document.getElementById('syncCloudBtn'),
             syncText: document.getElementById('syncText'),
+            configModal: document.getElementById('configModal'),
+            configForm: document.getElementById('configForm'),
+            cfgOwner: document.getElementById('cfgOwner'),
+            cfgRepo: document.getElementById('cfgRepo'),
+            cfgPath: document.getElementById('cfgPath'),
+            cfgToken: document.getElementById('cfgToken'),
             participantsList: document.getElementById('participantsList'),
             expensesContainer: document.getElementById('expensesContainer'),
             netBalancesList: document.getElementById('netBalancesList'),
@@ -303,35 +360,107 @@
         window.addEventListener('DOMContentLoaded', async () => {
             initIcons();
             bindEvents();
-            await fetchFromGitHub();
+            if (!config.token || !config.owner || !config.repo) {
+                openConfigModal();
+            } else {
+                await fetchFromGitHub();
+            }
         });
 
+        function openConfigModal() {
+            elements.cfgOwner.value = config.owner;
+            elements.cfgRepo.value = config.repo;
+            elements.cfgPath.value = config.path;
+            elements.cfgToken.value = config.token;
+            elements.configModal.classList.remove('hidden');
+        }
+
         async function fetchFromGitHub() {
+            if (!config.owner || !config.repo || !config.token) {
+                showToast('Please configure GitHub settings first.', 'error');
+                openConfigModal();
+                return;
+            }
             elements.syncText.innerText = "Syncing...";
             try {
-                const res = await fetch(`./${config.path}?t=${Date.now()}`);
-                if (!res.ok) throw new Error("Could not load data.json.");
-                const parsed = await res.json();
+                const url = `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.path}`;
+                const res = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${config.token}`,
+                        'Accept': 'application/vnd.github+json'
+                    }
+                });
+
+                if (!res.ok) throw new Error("Failed to fetch from GitHub repository.");
+                const data = await res.json();
+                fileSha = data.sha;
+
+                const binaryString = atob(data.content.replace(/\s/g, ''));
+                const bytes = Uint8Array.from(binaryString, c => c.charCodeAt(0));
+                const decodedContent = new TextDecoder().decode(bytes);
+                const parsed = JSON.parse(decodedContent);
 
                 state.participants = parsed.participants || [];
                 state.expenses = parsed.expenses || [];
                 render();
-                showToast('Synced successfully!', 'success');
+                showToast('Synced successfully with GitHub!', 'success');
             } catch (err) {
                 console.error(err);
-                showToast('Unable to load data.json.', 'error');
+                showToast('Sync error: Check settings or fine-grained token.', 'error');
             } finally {
                 elements.syncText.innerText = "Sync Cloud";
             }
         }
 
         async function saveToGitHub() {
+            if (!config.owner || !config.repo || !config.token) {
+                showToast('Please set your GitHub credentials in Settings to save.', 'error');
+                openConfigModal();
+                return;
+            }
             elements.syncText.innerText = "Saving...";
-            showToast('Local state updated. Sync workflow handles repository commits.', 'info');
-            elements.syncText.innerText = "Sync Cloud";
+            try {
+                const url = `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.path}`;
+                const payloadData = JSON.stringify({ participants: state.participants, expenses: state.expenses }, null, 2);
+                
+                // Safe UTF-8 Base64 Encoding
+                const bytes = new TextEncoder().encode(payloadData);
+                let binary = '';
+                for (let i = 0; i < bytes.byteLength; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                const encodedContent = btoa(binary);
+
+                const body = {
+                    message: "Update family expense data via web app",
+                    content: encodedContent,
+                    sha: fileSha
+                };
+
+                const res = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${config.token}`,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if (!res.ok) throw new Error("Failed to commit changes to GitHub.");
+                const data = await res.json();
+                fileSha = data.content.sha;
+                showToast('Saved & committed to GitHub!', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to save to GitHub repository.', 'error');
+            } finally {
+                elements.syncText.innerText = "Sync Cloud";
+            }
         }
 
         function bindEvents() {
+            elements.openConfigBtn.addEventListener('click', openConfigModal);
             elements.syncCloudBtn.addEventListener('click', fetchFromGitHub);
             elements.exportPdfBtn.addEventListener('click', generatePdfReport);
             elements.copySettlementBtn.addEventListener('click', copySettlementPlan);
@@ -342,9 +471,27 @@
             elements.openAddExpenseModal.addEventListener('click', () => openExpenseModal());
 
             document.querySelectorAll('.closeModalBtn').forEach(b => b.addEventListener('click', () => {
+                elements.configModal.classList.add('hidden');
                 elements.personModal.classList.add('hidden');
                 elements.expenseModal.classList.add('hidden');
             }));
+
+            elements.configForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                config.owner = elements.cfgOwner.value.trim();
+                config.repo = elements.cfgRepo.value.trim();
+                config.path = elements.cfgPath.value.trim();
+                config.token = elements.cfgToken.value.trim();
+
+                localStorage.setItem('gh_owner', config.owner);
+                localStorage.setItem('gh_repo', config.repo);
+                localStorage.setItem('gh_path', config.path);
+                localStorage.setItem('gh_token', config.token);
+
+                elements.configModal.classList.add('hidden');
+                showToast('Credentials saved locally!', 'success');
+                await fetchFromGitHub();
+            });
 
             elements.personForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
