@@ -328,7 +328,9 @@
                 const data = await res.json();
                 fileSha = data.sha;
 
-                const decodedContent = decodeURIComponent(escape(atob(data.content)));
+                const binaryString = atob(data.content.replace(/\s/g, ''));
+                const bytes = Uint8Array.from(binaryString, c => c.charCodeAt(0));
+                const decodedContent = new TextDecoder().decode(bytes);
                 const parsed = JSON.parse(decodedContent);
 
                 state.participants = parsed.participants || [];
