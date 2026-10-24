@@ -169,4 +169,465 @@
     <!-- CONFIGURATION MODAL FOR GITHUB REPO & TOKEN -->
     <div id="configModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
-            <div class="flex justify-between items-center mb-4
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-900">GitHub Cloud Configuration</h3>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">Enter your GitHub repository details and token so the app can read/write data to your shared JSON file.</p>
+            <form id="configForm" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">GitHub Username / Org</label>
+                    <input type="text" id="ghOwner" required placeholder="e.g., your-username" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Repository Name</label>
+                    <input type="text" id="ghRepo" required placeholder="e.g., family-expense-splitter" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">JSON File Path</label>
+                    <input type="text" id="ghPath" required value="data.json" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Fine-Grained Token (Read/Write)</label>
+                    <input type="password" id="ghToken" required placeholder="github_pat_..." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                </div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="submit" class="w-full py-2.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm">Save & Connect Cloud</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD/EDIT PARTICIPANT -->
+    <div id="personModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="personModalTitle" class="text-lg font-bold text-slate-900">Add Family / Head</h3>
+                <button class="closeModalBtn text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="personForm" class="space-y-4">
+                <input type="hidden" id="personId">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Head of Family Name</label>
+                    <input type="text" id="personName" required placeholder="e.g., Person A" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Total Family Members (Including Head)</label>
+                    <input type="number" id="personCount" min="1" value="1" class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-sm">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" class="closeModalBtn px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD/EDIT EXPENSE -->
+    <div id="expenseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="expenseModalTitle" class="text-lg font-bold text-slate-900">Add New Expense</h3>
+                <button class="closeModalBtn text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="expenseForm" class="space-y-4">
+                <input type="hidden" id="expenseId">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Expense Description</label>
+                    <input type="text" id="expenseTitle" required placeholder="e.g., Resort Booking" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Total Amount (₹)</label>
+                        <input type="number" id="expenseAmount" min="0.01" step="0.01" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Paid By</label>
+                        <select id="expensePayer" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white"></select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Involved Participants</label>
+                    <div id="involvedParticipantsList" class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200 max-h-48 overflow-y-auto"></div>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" class="closeModalBtn px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl">Save Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- HIDDEN PDF REPORT CONTAINER -->
+    <div class="hidden">
+        <div id="pdfReportContainer" class="p-8 max-w-4xl bg-white text-slate-800">
+            <h1 class="text-2xl font-bold mb-4">Family Expense Report</h1>
+            <div id="pdfExpensesList"></div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT GITHUB API SYNC LOGIC -->
+    <script>
+        let config = {
+            owner: localStorage.getItem('gh_owner') || '',
+            repo: localStorage.getItem('gh_repo') || '',
+            path: localStorage.getItem('gh_path') || 'data.json',
+            token: localStorage.getItem('gh_token') || ''
+        };
+
+        let state = {
+            participants: [],
+            expenses: [],
+            activeTab: 'expenses'
+        };
+
+        let fileSha = null; // Required by GitHub API for updates
+
+        const elements = {
+            configModal: document.getElementById('configModal'),
+            configForm: document.getElementById('configForm'),
+            ghOwner: document.getElementById('ghOwner'),
+            ghRepo: document.getElementById('ghRepo'),
+            ghPath: document.getElementById('ghPath'),
+            ghToken: document.getElementById('ghToken'),
+            syncCloudBtn: document.getElementById('syncCloudBtn'),
+            syncText: document.getElementById('syncText'),
+            participantsList: document.getElementById('participantsList'),
+            expensesContainer: document.getElementById('expensesContainer'),
+            netBalancesList: document.getElementById('netBalancesList'),
+            settlementsList: document.getElementById('settlementsList'),
+            statHeadsCount: document.getElementById('statHeadsCount'),
+            statTotalHeadcount: document.getElementById('statTotalHeadcount'),
+            statTotalSpent: document.getElementById('statTotalSpent'),
+            statExpenseCount: document.getElementById('statExpenseCount'),
+            tabExpensesBtn: document.getElementById('tabExpensesBtn'),
+            tabSettlementsBtn: document.getElementById('tabSettlementsBtn'),
+            tabExpensesContent: document.getElementById('tabExpensesContent'),
+            tabSettlementsContent: document.getElementById('tabSettlementsContent'),
+            personModal: document.getElementById('personModal'),
+            expenseModal: document.getElementById('expenseModal'),
+            personForm: document.getElementById('personForm'),
+            expenseForm: document.getElementById('expenseForm'),
+            personId: document.getElementById('personId'),
+            personName: document.getElementById('personName'),
+            personCount: document.getElementById('personCount'),
+            expenseId: document.getElementById('expenseId'),
+            expenseTitle: document.getElementById('expenseTitle'),
+            expenseAmount: document.getElementById('expenseAmount'),
+            expensePayer: document.getElementById('expensePayer'),
+            involvedParticipantsList: document.getElementById('involvedParticipantsList'),
+            openAddPersonModal: document.getElementById('openAddPersonModal'),
+            openAddExpenseModal: document.getElementById('openAddExpenseModal'),
+            openConfigModalBtn: document.getElementById('openConfigModalBtn'),
+            copySettlementBtn: document.getElementById('copySettlementBtn'),
+            exportPdfBtn: document.getElementById('exportPdfBtn')
+        };
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            initIcons();
+            bindEvents();
+
+            if (!config.owner || !config.repo || !config.token) {
+                elements.configModal.classList.remove('hidden');
+            } else {
+                elements.ghOwner.value = config.owner;
+                elements.ghRepo.value = config.repo;
+                elements.ghPath.value = config.path;
+                elements.ghToken.value = config.token;
+                elements.configModal.classList.add('hidden');
+                await fetchFromGitHub();
+            }
+        });
+
+        // 1. Fetch JSON data from GitHub Repository
+        async function fetchFromGitHub() {
+            if (!config.owner || !config.repo || !config.token) return;
+            elements.syncText.innerText = "Syncing...";
+            try {
+                const url = `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.path}`;
+                const res = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${config.token}`,
+                        'Accept': 'application/vnd.github+json'
+                    }
+                });
+
+                if (!res.ok) throw new Error("Failed to fetch from GitHub repository.");
+                const data = await res.json();
+                fileSha = data.sha; // Save file SHA for updates
+
+                const decodedContent = decodeURIComponent(escape(atob(data.content)));
+                const parsed = JSON.parse(decodedContent);
+
+                state.participants = parsed.participants || [];
+                state.expenses = parsed.expenses || [];
+                render();
+                showToast('Synced successfully with GitHub!', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('Sync error: Check credentials or file path.', 'error');
+            } finally {
+                elements.syncText.innerText = "Sync Cloud";
+            }
+        }
+
+        // 2. Save/Commit JSON data back to GitHub Repository
+        async function saveToGitHub() {
+            if (!config.owner || !config.repo || !config.token) {
+                elements.configModal.classList.remove('hidden');
+                return;
+            }
+
+            elements.syncText.innerText = "Saving...";
+            try {
+                const url = `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.path}`;
+                const payloadData = JSON.stringify({ participants: state.participants, expenses: state.expenses }, null, 2);
+                const encodedContent = btoa(unescape(encodeURIComponent(payloadData)));
+
+                const body = {
+                    message: "Update family expense data via web app",
+                    content: encodedContent,
+                    sha: fileSha
+                };
+
+                const res = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${config.token}`,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if (!res.ok) throw new Error("Failed to commit changes to GitHub.");
+                const data = await res.json();
+                fileSha = data.content.sha; // Update SHA for next commit
+                showToast('Saved & committed to GitHub!', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to save to GitHub repository.', 'error');
+            } finally {
+                elements.syncText.innerText = "Sync Cloud";
+            }
+        }
+
+        function bindEvents() {
+            elements.openConfigModalBtn.addEventListener('click', () => elements.configModal.classList.remove('hidden'));
+            elements.syncCloudBtn.addEventListener('click', fetchFromGitHub);
+            
+            elements.configForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                config.owner = elements.ghOwner.value.trim();
+                config.repo = elements.ghRepo.value.trim();
+                config.path = elements.ghPath.value.trim() || 'data.json';
+                config.token = elements.ghToken.value.trim();
+
+                localStorage.setItem('gh_owner', config.owner);
+                localStorage.setItem('gh_repo', config.repo);
+                localStorage.setItem('gh_path', config.path);
+                localStorage.setItem('gh_token', config.token);
+
+                elements.configModal.classList.add('hidden');
+                await fetchFromGitHub();
+            });
+
+            elements.tabExpensesBtn.addEventListener('click', () => switchTab('expenses'));
+            elements.tabSettlementsBtn.addEventListener('click', () => switchTab('settlements'));
+            elements.openAddPersonModal.addEventListener('click', () => openPersonModal());
+            elements.openAddExpenseModal.addEventListener('click', () => openExpenseModal());
+
+            document.querySelectorAll('.closeModalBtn').forEach(b => b.addEventListener('click', () => {
+                elements.personModal.classList.add('hidden');
+                elements.expenseModal.classList.add('hidden');
+            }));
+
+            elements.personForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = elements.personId.value;
+                const name = elements.personName.value.trim();
+                const members = parseInt(elements.personCount.value) || 1;
+
+                if (id) {
+                    const idx = state.participants.findIndex(p => p.id === id);
+                    if (idx !== -1) state.participants[idx] = { id, name, members };
+                } else {
+                    state.participants.push({ id: 'p_' + Date.now(), name, members });
+                }
+                elements.personModal.classList.add('hidden');
+                render();
+                await saveToGitHub();
+            });
+
+            elements.expenseForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = elements.expenseId.value;
+                const title = elements.expenseTitle.value.trim();
+                const amount = parseFloat(elements.expenseAmount.value);
+                const payerId = elements.expensePayer.value;
+                const involvedIds = Array.from(elements.involvedParticipantsList.querySelectorAll('.involvedCb:checked')).map(cb => cb.value);
+
+                if (involvedIds.length === 0) {
+                    showToast('Select at least one participant!', 'error');
+                    return;
+                }
+
+                if (id) {
+                    const idx = state.expenses.findIndex(ex => ex.id === id);
+                    if (idx !== -1) state.expenses[idx] = { ...state.expenses[idx], title, amount, payerId, involvedIds };
+                } else {
+                    state.expenses.push({ id: 'e_' + Date.now(), title, amount, payerId, splitType: 'per_capita', involvedIds });
+                }
+                elements.expenseModal.classList.add('hidden');
+                render();
+                await saveToGitHub();
+            });
+        }
+
+        function switchTab(tab) {
+            if (tab === 'expenses') {
+                elements.tabExpensesContent.classList.remove('hidden');
+                elements.tabSettlementsContent.classList.add('hidden');
+                elements.tabExpensesBtn.className = "flex-1 py-2.5 px-4 text-xs sm:text-sm font-semibold rounded-lg bg-brand-600 text-white shadow-sm";
+                elements.tabSettlementsBtn.className = "flex-1 py-2.5 px-4 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100";
+            } else {
+                elements.tabExpensesContent.classList.add('hidden');
+                elements.tabSettlementsContent.classList.remove('hidden');
+                elements.tabSettlementsBtn.className = "flex-1 py-2.5 px-4 text-xs sm:text-sm font-semibold rounded-lg bg-brand-600 text-white shadow-sm";
+                elements.tabExpensesBtn.className = "flex-1 py-2.5 px-4 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100";
+            }
+        }
+
+        function openPersonModal(id = null) {
+            elements.personForm.reset();
+            if (id) {
+                const p = state.participants.find(x => x.id === id);
+                elements.personId.value = p.id;
+                elements.personName.value = p.name;
+                elements.personCount.value = p.members;
+                document.getElementById('personModalTitle').innerText = 'Edit Participant';
+            } else {
+                elements.personId.value = '';
+                document.getElementById('personModalTitle').innerText = 'Add Family / Head';
+            }
+            elements.personModal.classList.remove('hidden');
+        }
+
+        function openExpenseModal(id = null) {
+            if (state.participants.length === 0) {
+                showToast('Add participants first!', 'error');
+                return;
+            }
+            elements.expenseForm.reset();
+            elements.expensePayer.innerHTML = state.participants.map(p => `<option value="${p.id}">${p.name} (${p.members} heads)</option>`).join('');
+            
+            if (id) {
+                const ex = state.expenses.find(x => x.id === id);
+                elements.expenseId.value = ex.id;
+                elements.expenseTitle.value = ex.title;
+                elements.expenseAmount.value = ex.amount;
+                elements.expensePayer.value = ex.payerId;
+                renderInvolved(ex.involvedIds);
+            } else {
+                elements.expenseId.value = '';
+                renderInvolved(state.participants.map(p => p.id));
+            }
+            elements.expenseModal.classList.remove('hidden');
+        }
+
+        function renderInvolved(selected = []) {
+            elements.involvedParticipantsList.innerHTML = state.participants.map(p => `
+                <label class="flex items-center justify-between p-2 rounded-lg hover:bg-white cursor-pointer text-xs">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" value="${p.id}" ${selected.includes(p.id) ? 'checked' : ''} class="involvedCb rounded text-brand-600 w-4 h-4">
+                        <span class="font-medium text-slate-800">${p.name}</span>
+                    </div>
+                    <span class="text-[10px] font-bold bg-slate-200 px-2 py-0.5 rounded">${p.members} headcount</span>
+                </label>
+            `).join('');
+        }
+
+        async function deleteParticipant(id) {
+            state.participants = state.participants.filter(p => p.id !== id);
+            render();
+            await saveToGitHub();
+        }
+
+        async function deleteExpense(id) {
+            state.expenses = state.expenses.filter(e => e.id !== id);
+            render();
+            await saveToGitHub();
+        }
+
+        function calculateBalances() {
+            const balances = {};
+            state.participants.forEach(p => balances[p.id] = 0);
+            state.expenses.forEach(exp => {
+                const involved = state.participants.filter(p => exp.involvedIds.includes(p.id));
+                if (involved.length === 0) return;
+                balances[exp.payerId] += exp.amount;
+                const costPerHead = exp.amount / involved.reduce((s, p) => s + p.members, 0);
+                involved.forEach(p => balances[p.id] -= costPerHead * p.members);
+            });
+            return balances;
+        }
+
+        function render() {
+            elements.statHeadsCount.innerText = state.participants.length;
+            elements.statTotalHeadcount.innerText = state.participants.reduce((s, p) => s + p.members, 0);
+            const totalSpent = state.expenses.reduce((s, e) => s + e.amount, 0);
+            elements.statTotalSpent.innerText = `₹${totalSpent.toFixed(2)}`;
+            elements.statExpenseCount.innerText = state.expenses.length;
+
+            elements.participantsList.innerHTML = state.participants.map(p => `
+                <div class="flex items-center justify-between p-3 bg-slate-50 border rounded-xl">
+                    <div>
+                        <div class="font-bold text-xs">${p.name}</div>
+                        <div class="text-[11px] text-slate-500">${p.members} headcount</div>
+                    </div>
+                    <div class="flex gap-1">
+                        <button onclick="openPersonModal('${p.id}')" class="p-1 text-slate-400 hover:text-slate-600"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="deleteParticipant('${p.id}')" class="p-1 text-slate-400 hover:text-red-500"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                </div>
+            `).join('');
+
+            elements.expensesContainer.innerHTML = state.expenses.map(e => {
+                const payer = state.participants.find(p => p.id === e.payerId);
+                return `
+                    <div class="bg-white p-4 border rounded-2xl shadow-sm flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-sm">${e.title}</h3>
+                            <p class="text-xs text-slate-500">Paid by ${payer ? payer.name : 'Unknown'}</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-extrabold text-sm">₹${e.amount.toFixed(2)}</span>
+                            <button onclick="deleteExpense('${e.id}')" class="p-1 text-slate-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const balances = calculateBalances();
+            elements.netBalancesList.innerHTML = state.participants.map(p => `
+                <div class="p-3 border rounded-xl flex justify-between items-center">
+                    <span class="font-bold text-xs">${p.name}</span>
+                    <span class="text-xs font-bold ${balances[p.id] >= 0 ? 'text-emerald-600' : 'text-rose-600'}">₹${balances[p.id].toFixed(2)}</span>
+                </div>
+            `).join('');
+
+            initIcons();
+        }
+
+        function initIcons() { lucide.createIcons(); }
+
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            t.className = `px-4 py-2.5 rounded-xl shadow-lg bg-slate-900 text-white text-xs font-semibold`;
+            t.innerText = msg;
+            container.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
