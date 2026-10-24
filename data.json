@@ -1,0 +1,7 @@
+{
+  "participants": [
+    { "id": "p1", "name": "Head A", "members": 4 },
+    { "id": "p2", "name": "Person E", "members": 1 }
+  ],
+  "expenses": []
+}
