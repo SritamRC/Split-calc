@@ -47,16 +47,6 @@
         "p_1792824035834",
         "p_1792824042020"
       ]
-    },
-    {
-      "id": "e_1792830154910",
-      "title": "Resort booking",
-      "amount": 5000,
-      "payerId": "p_1792824035834",
-      "splitType": "per_capita",
-      "involvedIds": [
-        "p_1792824042020"
-      ]
     }
   ]
 }
